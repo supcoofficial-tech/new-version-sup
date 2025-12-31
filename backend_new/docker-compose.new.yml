@@ -1,0 +1,36 @@
+version: "3.8" # توصیه می شود نسخه را مشخص کنید
+
+services:
+  api_new:
+    build: .
+    container_name: urban_api_new
+    env_file: .env  # از همین فایل .env جدید استفاده می کند
+    depends_on:
+      - db_new      # وابسته به کانتینر دیتابیس جدید
+    ports:
+      - "8002:8000" # پورت بیرونی:8002 به پورت داخلی 8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - backend_new_net # اضافه کردن شبکه
+
+  db_new:
+    image: postgres:15
+    container_name: urban_db_new
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432" # پورت بیرونی برای دسترسی خارجی (اختیاری برای اپ)
+    volumes:
+      - postgres_data_new:/var/lib/postgresql/data
+    networks:
+      - backend_new_net # اضافه کردن شبکه
+
+volumes:
+  postgres_data_new:
+
+networks:
+  backend_new_net:
+    driver: bridge

@@ -1,0 +1,16 @@
+
+# --- Test & Coverage ---
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==5.0.0
+httpx==0.27.2
+
+# --- Lint & Format ---
+ruff==0.6.9           # جایگزین سریع flake8 + isort + چندین پلاگین
+black==24.8.0
+mypy==1.11.2
+types-requests==2.32.0.20240914
+types-python-dateutil==2.9.0.20240906
+
+# --- Dev Utils ---
+pre-commit==3.8.0

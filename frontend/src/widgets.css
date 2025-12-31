@@ -1,0 +1,31 @@
+/* CSS سفارشی تم دارک */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: #121212;
+  color: #e0e0e0;
+  font-family: Arial, sans-serif;
+}
+
+/* تغییر پس‌زمینه div نقشه */
+#map {
+  background-color: #121212;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* استایل‌های شخصی برای کنترل‌ها (مثال) */
+.cesium-viewer-toolbar {
+  background-color: rgba(30, 30, 30, 0.8) !important;
+  border: none !important;
+}
+
+.cesium-viewer-bottom {
+  background-color: rgba(30, 30, 30, 0.8) !important;
+}
+
+/* ویرایش رنگ Tooltip و Popups */
+.cesium-popup {
+  background-color: #222 !important;
+  color: #ddd !important;
+}

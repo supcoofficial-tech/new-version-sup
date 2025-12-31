@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "distation",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32638" } },
+"features": [
+{ "type": "Feature", "properties": { "User": 1, "Degree": 3, "POI_Info": "بازار سنتی", "Type": 1, "Id": 1, "Landuse": 2 }, "geometry": { "type": "Point", "coordinates": [ 690789.037228841334581, 3799066.664061788469553 ] } },
+{ "type": "Feature", "properties": { "User": 0, "Degree": 0, "POI_Info": null, "Type": 0, "Id": 2, "Landuse": 6 }, "geometry": { "type": "Point", "coordinates": [ 690756.167113229166716, 3799328.034378224052489 ] } },
+{ "type": "Feature", "properties": { "User": 0, "Degree": 0, "POI_Info": null, "Type": 0, "Id": 3, "Landuse": 8 }, "geometry": { "type": "Point", "coordinates": [ 690716.582108772941865, 3799664.12341280002147 ] } },
+{ "type": "Feature", "properties": { "User": 0, "Degree": 0, "POI_Info": null, "Type": 0, "Id": 4, "Landuse": 4 }, "geometry": { "type": "Point", "coordinates": [ 691016.547727350727655, 3799659.319137682206929 ] } }
+]
+}

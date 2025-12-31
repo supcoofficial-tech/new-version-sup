@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "origin",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32638" } },
+"features": [
+{ "type": "Feature", "properties": { "User": 0, "Degree": 2, "POI_Info": null, "Type": 1, "Id": 1, "Landuse": 1 }, "geometry": { "type": "Point", "coordinates": [ 690784.277660803869367, 3799928.009767504408956 ] } },
+{ "type": "Feature", "properties": { "User": 0, "Degree": 0, "POI_Info": null, "Type": 0, "Id": 2, "Landuse": 1 }, "geometry": { "type": "Point", "coordinates": [ 690672.31086340919137, 3799512.707030763849616 ] } },
+{ "type": "Feature", "properties": { "User": 0, "Degree": 0, "POI_Info": null, "Type": 0, "Id": 3, "Landuse": 1 }, "geometry": { "type": "Point", "coordinates": [ 690953.808860394638032, 3799902.756308885291219 ] } },
+{ "type": "Feature", "properties": { "User": 0, "Degree": 0, "POI_Info": null, "Type": 0, "Id": 4, "Landuse": 1 }, "geometry": { "type": "Point", "coordinates": [ 691087.841513282153755, 3799857.059953943360597 ] } }
+]
+}

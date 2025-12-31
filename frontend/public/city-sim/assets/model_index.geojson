@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          690789.9662792275,
+          3800068.1838066336,
+          0.0
+        ]
+      },
+      "properties": {
+        "model_file": "model.fbx",
+        "orientation_euler_deg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0,
+        "meta": {
+          "note": "Place this model at the given lon/lat/alt. Adjust orientation/scale as needed."
+        }
+      }
+    }
+  ]
+}

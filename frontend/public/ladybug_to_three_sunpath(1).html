@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SunPath (Three.js) — تبدیل‌شده از Ladybug</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    :root{--bg:#0b1120;--fg:#e5e7eb;--card:#111827;--muted:#94a3b8}
+    html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:IRANSans,system-ui,Segoe UI}
+    #ui{position:fixed;left:10px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;z-index:15}
+    .card{background:var(--card);border:1px solid #0f172a;border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .row{display:flex;gap:10px;align-items:center;margin:6px 0}
+    label{font-size:12px;color:var(--muted);min-width:90px}
+    input[type="number"]{width:90px;background:#0b1329;border:1px solid #1f2937;color:#e5e7eb;border-radius:8px;padding:6px 8px}
+    input[type="range"]{width:200px}
+    select{background:#0b1329;border:1px solid #1f2937;color:#e5e7eb;border-radius:8px;padding:6px 8px}
+    button{padding:8px 12px;border-radius:10px;border:1px solid #0f172a;background:#1f2937;color:#e5e7eb;cursor:pointer}
+    #readouts{position:fixed;right:10px;bottom:10px;width:280px}
+    #readouts pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  </style>
+</head>
+<body>
+  <div id="ui" class="card">
+    <div class="row"><label>Latitude</label><input id="lat" type="number" value="35.7" step="0.0001"></div>
+    <div class="row"><label>Longitude</label><input id="lon" type="number" value="51.4" step="0.0001"></div>
+    <div class="row"><label>Time Zone (UTC±h)</label><input id="tz" type="number" value="3.5" step="0.5"></div>
+    <div class="row"><label>North Offset°</label><input id="north" type="number" value="0" step="1"></div>
+    <div class="row"><label>Month / Day</label>
+      <select id="month"></select>
+      <input id="day" type="number" value="21" min="1" max="31" step="1">
+    </div>
+    <div class="row"><label>Hour:Minute</label>
+      <input id="hour" type="range" min="0" max="23" step="1" value="12">
+      <input id="minute" type="range" min="0" max="59" step="1" value="0">
+    </div>
+    <div class="row">
+      <label>Mode</label>
+      <select id="mode">
+        <option value="single" selected>Single (یک ساعت)</option>
+        <option value="daily">Daily Arc (قوس روز)</option>
+        <option value="analemma">Analemma (سالانه)</option>
+      </select>
+      <button id="fit">فیت</button>
+    </div>
+  </div>
+
+  <div id="readouts" class="card">
+    <pre id="out"></pre>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0b1120');
+    scene.fog = new THREE.Fog('#0b1120', 500, 2000);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 5000);
+    camera.position.set(-220, 240, 320);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0,40,0); controls.update();
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.1);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048,2048);
+    scene.add(sunLight);
+
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000,2000), new THREE.MeshStandardMaterial({ color:'#0f172a' }));
+    ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+
+    const box = new THREE.Mesh(new THREE.BoxGeometry(50,80,50), new THREE.MeshStandardMaterial({ color:'#9cc3d5' }));
+    box.position.set(0,40,0); box.castShadow = true; scene.add(box);
+
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(400,36,20,0,Math.PI*2,0,Math.PI/2), new THREE.MeshBasicMaterial({ color:'#0e1726', transparent:true, opacity:0.25, side:THREE.BackSide }));
+    scene.add(sky);
+
+    const sunPathGroup = new THREE.Group(); scene.add(sunPathGroup);
+    const sunMarker = new THREE.Mesh(new THREE.SphereGeometry(3.5,16,12), new THREE.MeshBasicMaterial({ color:'#ffd84a' }));
+    sunMarker.visible = false; scene.add(sunMarker);
+    const out = document.getElementById('out');
+
+    function dayOfYear(y,m,d){const md=[31,(y%4===0&&y%100!==0)||y%400===0?29:28,31,30,31,30,31,31,30,31,30,31];return md.slice(0,m-1).reduce((a,b)=>a+b,0)+d;}
+    function hourOfYear(y,m,d,hh,mm){return (dayOfYear(y,m,d)-1)*24+hh+mm/60;}
+    function makeLocation(name,lat,lon,tz,elev=0){return {name,lat,lon,tz,elev};}
+
+    const RAD=Math.PI/180,DEG=180/Math.PI;
+    function solarPositionUTC(y,m,d,H,M,latDeg,lonDeg,tzH,solarTime=false,northOffsetDeg=0){
+      const doy=dayOfYear(y,m,d),timeUTC=H-tzH+M/60,gamma=2*Math.PI/365*(doy-1+(timeUTC-12)/24);
+      const eqtime=229.18*(0.000075+0.001868*Math.cos(gamma)-0.032077*Math.sin(gamma)-0.014615*Math.cos(2*gamma)-0.040849*Math.sin(2*gamma));
+      const decl=0.006918-0.399912*Math.cos(gamma)+0.070257*Math.sin(gamma)-0.006758*Math.cos(2*gamma)+0.000907*Math.sin(2*gamma)-0.002697*Math.cos(3*gamma)+0.00148*Math.sin(3*gamma);
+      const timeOffset=eqtime+4*lonDeg-60*tzH;const tst=(solarTime?(H*60+M):(H*60+M+timeOffset));
+      const ha=(tst/4-180)*RAD,lat=latDeg*RAD;
+      const cosZen=Math.sin(lat)*Math.sin(decl)+Math.cos(lat)*Math.cos(decl)*Math.cos(ha);
+      const zen=Math.acos(Math.min(1,Math.max(-1,cosZen)));const alt=Math.PI/2-zen;
+      let az=Math.acos(((Math.sin(lat)*Math.cos(zen))-Math.sin(decl))/(Math.cos(lat)*Math.sin(zen)+1e-9));
+      if(Math.sin(ha)>0)az=2*Math.PI-az;
+      const azimuth=(az*DEG+northOffsetDeg)%360,altitude=alt*DEG;
+      const a=azimuth*RAD,e=alt;const x=Math.sin(a)*Math.cos(e),y=Math.sin(e),z=Math.cos(a)*Math.cos(e);
+      return{altitude,azimuth,vector:new THREE.Vector3(x,y,z).normalize(),declination:decl*DEG,eqtime};
+    }
+
+    function drawSingleSun(loc,date,opt){
+      sunPathGroup.clear();
+      const S=solarPositionUTC(date.y,date.m,date.d,date.H,date.M,loc.lat,loc.lon,loc.tz,opt.solarTime,opt.north);
+      const R=380,p=S.vector.clone().multiplyScalar(R);
+      sunMarker.position.copy(p);sunMarker.visible=true;
+      sunLight.position.copy(S.vector.clone().multiplyScalar(600));sunLight.target.position.set(0,0,0);scene.add(sunLight.target);
+      out.textContent=`Lat/Lon: ${loc.lat}, ${loc.lon}\\nAlt: ${S.altitude.toFixed(2)}° Az: ${S.azimuth.toFixed(2)}°\\nDecl: ${S.declination.toFixed(2)}° EqT: ${S.eqtime.toFixed(1)}min`;
+    }
+    function drawDailyArc(loc,date,opt){
+      sunPathGroup.clear();const R=380,steps=48,pts=[];
+      for(let i=0;i<=steps;i++){const t=i/steps,H=Math.floor(24*t),M=Math.floor(((24*t)-H)*60);
+        const S=solarPositionUTC(date.y,date.m,date.d,H,M,loc.lat,loc.lon,loc.tz,opt.solarTime,opt.north);
+        if(S.altitude>0)pts.push(S.vector.clone().multiplyScalar(R));}
+      if(pts.length>1){const g=new THREE.BufferGeometry().setFromPoints(pts);
+        const line=new THREE.Line(g,new THREE.LineBasicMaterial({color:'#ffd84a'}));sunPathGroup.add(line);
+        sunMarker.position.copy(pts[Math.floor(pts.length/2)]);sunMarker.visible=true;}
+      out.textContent=`Daily Arc ${date.y}/${date.m}/${date.d}`;
+    }
+    function drawAnalemma(loc,date,opt){
+      sunPathGroup.clear();const R=380,pts=[];
+      for(let m=1;m<=12;m++){const S=solarPositionUTC(date.y,m,21,date.H,date.M,loc.lat,loc.lon,loc.tz,opt.solarTime,opt.north);
+        if(S.altitude>0)pts.push(S.vector.clone().multiplyScalar(R));}
+      if(pts.length>1){const g=new THREE.BufferGeometry().setFromPoints(pts);
+        const line=new THREE.Line(g,new THREE.LineDashedMaterial({color:'#60a5fa',dashSize:2,gapSize:1}));line.computeLineDistances();sunPathGroup.add(line);sunMarker.visible=false;}
+      out.textContent=`Analemma ساعت ${date.H}:${date.M}`;
+    }
+
+    const monthSel=document.getElementById('month');['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].forEach((n,i)=>{
+      const o=document.createElement('option');o.value=i+1;o.textContent=`${i+1}-${n}`;if(i===8)o.selected=true;monthSel.appendChild(o);});
+    const latEl=lat,lonEl=lon,tzEl=tz,northEl=north,dayEl=day,hourEl=hour,minEl=minute,modeEl=mode;
+    function readState(){return{loc:makeLocation('Custom',parseFloat(latEl.value),parseFloat(lonEl.value),parseFloat(tzEl.value)),date:{y:2024,m:+monthSel.value,d:+dayEl.value,H:+hourEl.value,M:+minEl.value},opt:{solarTime:false,north:+northEl.value}};}
+    function redraw(){const {loc,date,opt}=readState();const m=modeEl.value;if(m==='single')drawSingleSun(loc,date,opt);if(m==='daily')drawDailyArc(loc,date,opt);if(m==='analemma')drawAnalemma(loc,date,opt);}
+    ;['change','input'].forEach(ev=>[latEl,lonEl,tzEl,northEl,monthSel,dayEl,hourEl,minEl,modeEl].forEach(el=>el.addEventListener(ev,redraw)));
+    document.getElementById('fit').addEventListener('click',()=>controls.target.set(0,40,0));
+    redraw();
+
+    addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+    renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera);});
+  </script>
+</body>
+</html>

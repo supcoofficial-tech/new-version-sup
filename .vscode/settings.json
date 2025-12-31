@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "C:\\Users\\05\\Desktop\\SUP\\backend",
+        "./backend"
+    ]
+}

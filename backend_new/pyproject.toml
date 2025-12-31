@@ -1,0 +1,44 @@
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = '''
+/(
+    \.venv
+  | build
+  | dist
+  | migrations
+  | pycache
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-select = ["I"]   # isort-like import sorting
+exclude = ["migrations", "build", "dist", ".venv"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]  # اگر داک‌استرینگ اجباری فعال بود
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-q --disable-warnings --maxfail=1"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+check_untyped_defs = true
+pretty = true
+exclude = "(^migrations/|^build/|^dist/|^\\.venv/)"
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
